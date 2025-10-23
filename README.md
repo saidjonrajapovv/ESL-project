@@ -1,2 +1,1 @@
-# ESL-project
-Testing workflow for ESL course
+# ESL Project Repository
