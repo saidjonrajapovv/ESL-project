@@ -4,14 +4,14 @@ OUTPUT_DIRECTORY := _build
 DFU_PACKAGE      := $(OUTPUT_DIRECTORY)/nrf52840_xxaa.dfu
 DFU_PORT         ?= /dev/ttyACM0
 
-
+# Исправленные пути
 SDK_ROOT ?= /home/user/projects/esl-nsdk
 PROJ_DIR := /home/user/projects/ESL-project
 
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
   LINKER_SCRIPT  := blinky_gcc_nrf52.ld
 
-# Source files common to all targets
+# Source files
 SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_frontend.c \
@@ -35,27 +35,34 @@ SRC_FILES += \
 
 # Include folders common to all targets
 INC_FOLDERS += \
-$(SDK_ROOT)/components \
-$(SDK_ROOT)/components/libraries/util \
-$(SDK_ROOT)/components/libraries/log \
-$(SDK_ROOT)/modules/nrfx \
-$(SDK_ROOT)/modules/nrfx/mdk \
-$(SDK_ROOT)/integration/nrfx
-
-# Libraries common to all targets
-LIB_FILES += \
+  $(SDK_ROOT)/components \
+  $(SDK_ROOT)/modules/nrfx/mdk \
+  $(PROJ_DIR) \
+  $(SDK_ROOT)/components/softdevice/mbr/headers \
+  $(SDK_ROOT)/components/libraries/strerror \
+  $(SDK_ROOT)/components/toolchain/cmsis/include \
+  $(SDK_ROOT)/components/libraries/util \
+  ../config \
+  $(SDK_ROOT)/components/libraries/balloc \
+  $(SDK_ROOT)/components/libraries/ringbuf \
+  $(SDK_ROOT)/modules/nrfx/hal \
+  $(SDK_ROOT)/components/libraries/bsp \
+  $(SDK_ROOT)/components/libraries/log \
+  $(SDK_ROOT)/modules/nrfx \
+  $(SDK_ROOT)/components/libraries/experimental_section_vars \
+  $(SDK_ROOT)/components/libraries/delay \
+  $(SDK_ROOT)/integration/nrfx \
+  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd \
+  $(SDK_ROOT)/components/libraries/atomic \
+  $(SDK_ROOT)/components/boards \
+  $(SDK_ROOT)/components/libraries/memobj \
+  $(SDK_ROOT)/external/fprintf \
+  $(SDK_ROOT)/components/libraries/log/src \
 
 # Optimization flags
 OPT = -O3 -g3
-# Uncomment the line below to enable link time optimization
-#OPT += -flto
 
-# C flags common to all targets
-
-###
-# CFLAGS += -I$(PROJ_DIR)
-###
-
+# C flags
 CFLAGS += $(OPT)
 CFLAGS += -DBOARD_PCA10059
 CFLAGS += -DBSP_DEFINES_ONLY
@@ -67,13 +74,10 @@ CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall -Werror
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-# keep every function in a separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin -fshort-enums
 
-# C++ flags common to all targets
-CXXFLAGS += $(OPT)
-# Assembler flags common to all targets
+# Assembler flags
 ASMFLAGS += -g3
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
@@ -90,52 +94,40 @@ LDFLAGS += $(OPT)
 LDFLAGS += -mthumb -mabi=aapcs -L$(SDK_ROOT)/modules/nrfx/mdk -T$(LINKER_SCRIPT)
 LDFLAGS += -mcpu=cortex-m4
 LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-# let linker dump unused sections
 LDFLAGS += -Wl,--gc-sections
-# use newlib in nano version
 LDFLAGS += --specs=nano.specs
 
+# Heap/Stack sizes
 nrf52840_xxaa: CFLAGS += -D__HEAP_SIZE=8192
 nrf52840_xxaa: CFLAGS += -D__STACK_SIZE=8192
 nrf52840_xxaa: ASMFLAGS += -D__HEAP_SIZE=8192
 nrf52840_xxaa: ASMFLAGS += -D__STACK_SIZE=8192
 
-# Add standard libraries at the very end of the linker input, after all objects
-# that may need symbols provided by these libraries.
+# Standard libraries
 LIB_FILES += -lc -lnosys -lm
 
-
 .PHONY: default help
-
-# Default target - first one defined
 default: nrf52840_xxaa
 
-# Print all targets that can be built
 help:
 	@echo following targets are available:
 	@echo		nrf52840_xxaa
-	@echo		flash      - flashing binary
+	@echo		flash
 
 TEMPLATE_PATH := $(SDK_ROOT)/components/toolchain/gcc
-
-
 include $(TEMPLATE_PATH)/Makefile.common
-
 $(foreach target, $(TARGETS), $(call define_target, $(target)))
 
 .PHONY: dfu
-
 dfu_package: $(DFU_PACKAGE)
-
 $(DFU_PACKAGE): $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	@echo Creating DFU package: $(DFU_PACKAGE)
 	nrfutil pkg generate \
 	   --hw-version 52 \
 	   --application-version 1 \
-	   --sd-req 0x0,0x102 \
-	   --sd-id 0x102 \
-	   --application $< \
-	   --softdevice $(SDK_ROOT)/components/softdevice/s113/hex/s113_nrf52_7.2.0_softdevice.hex $@
+	   --sd-req 0x102 \
+	   --application $@ \
+	   $@
 
 dfu: $(DFU_PACKAGE)
 	@echo Performing DFU with generated package
