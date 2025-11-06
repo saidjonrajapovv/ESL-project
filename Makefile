@@ -5,11 +5,13 @@ DFU_PACKAGE      := $(OUTPUT_DIRECTORY)/nrf52840_xxaa.dfu
 DFU_PORT         ?= /dev/ttyACM0
 
 # Исправленные пути
-SDK_ROOT ?= /home/user/projects/esl-nsdk
-PROJ_DIR := /home/user/projects/ESL-project
+#SDK_ROOT ?= /home/user/projects/esl-nsdk
+#PROJ_DIR := /home/user/projects/ESL-project
+PROJ_DIR := $(abspath .)
+SDK_ROOT ?= ../esl-nsdk
 
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
-  LINKER_SCRIPT  := blinky_gcc_nrf52.ld
+  LINKER_SCRIPT  := armgcc/blinky_gcc_nrf52.ld
 
 # Source files
 SRC_FILES += \
@@ -42,13 +44,15 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/strerror \
   $(SDK_ROOT)/components/toolchain/cmsis/include \
   $(SDK_ROOT)/components/libraries/util \
-  ../config \
+  $(PROJ_DIR)/config \
   $(SDK_ROOT)/components/libraries/balloc \
   $(SDK_ROOT)/components/libraries/ringbuf \
   $(SDK_ROOT)/modules/nrfx/hal \
   $(SDK_ROOT)/components/libraries/bsp \
   $(SDK_ROOT)/components/libraries/log \
   $(SDK_ROOT)/modules/nrfx \
+  $(SDK_ROOT)/modules/nrfx/mdk \
+  $(SDK_ROOT)/integration/nrfx \
   $(SDK_ROOT)/components/libraries/experimental_section_vars \
   $(SDK_ROOT)/components/libraries/delay \
   $(SDK_ROOT)/integration/nrfx \

@@ -1,1 +1,7 @@
-armgcc/_build/
+_build/
+*.o
+*.out
+*.bin
+*.hex
+*.map
+
